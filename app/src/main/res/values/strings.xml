@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">test BLE</string>
+    <string name="button">Scan</string>
 </resources>
