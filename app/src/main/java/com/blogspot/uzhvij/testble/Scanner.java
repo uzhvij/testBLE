@@ -22,11 +22,11 @@ import java.util.List;
 class Scanner {
     //if 0L - onScanResult, if > 0 - onBatchScanResults
     public static final long SCANNING_TIME = 0L;
+    private static final String TAG = "myLogs";
     private final ScanCallback scanCallback;
     private final BluetoothLeScanner scanner;
     private final ScanSettings scanSettings;
     private final List<ScanFilter> filters = null;
-    private static final String TAG = "myLogs";
     private final InterfaceUpdater interfaceUpdater;
     private final LinkedHashSet<String> resultsSet;
     final LinkedHashSet<BluetoothDevice> devicesSet;

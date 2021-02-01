@@ -1,6 +1,8 @@
 package com.blogspot.uzhvij.testble;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,7 +14,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.blogspot.uzhvij.testble.databinding.ActivityDeviceBinding;
 
-public class DeviceActivity extends AppCompatActivity implements View.OnClickListener {
+import java.util.List;
+
+public class DeviceActivity extends AppCompatActivity implements View.OnClickListener, InterfaceUpdater {
     ActivityDeviceBinding binding;
 
     private Connector connector;
@@ -50,5 +54,11 @@ public class DeviceActivity extends AppCompatActivity implements View.OnClickLis
             Log.d(TAG, "onClick: disconnect");
             connector.disconnect();
         }
+    }
+
+    @Override
+    public void updateInterface(String data) {
+        binding.deviceInfo.setTextColor(Color.GREEN);
+        binding.deviceInfo.append("\n" + data);
     }
 }
