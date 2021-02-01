@@ -8,79 +8,98 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.RequiresApi;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 class Scanner {
-    private BluetoothAdapter adapter;
+    //if 0L - onScanResult, if > 0 - onBatchScanResults
+    public static final long SCANNING_TIME = 0L;
     private final ScanCallback scanCallback;
-    private BluetoothLeScanner scanner;
-    private ScanSettings scanSettings;
-    private List<ScanFilter> filters = null;
+    private final BluetoothLeScanner scanner;
+    private final ScanSettings scanSettings;
+    private final List<ScanFilter> filters = null;
     private static final String TAG = "myLogs";
-    private InterfaceUpdater interfaceUpdater;
+    private final InterfaceUpdater interfaceUpdater;
+    private final LinkedHashSet<String> resultsSet;
+    final LinkedHashSet<BluetoothDevice> devicesSet;
 
-    Scanner(InterfaceUpdater interfaceUpdater){
-        Log.d(TAG, "Scanner: ");
+    Scanner(InterfaceUpdater interfaceUpdater) {
         this.interfaceUpdater = interfaceUpdater;
-        adapter = BluetoothAdapter.getDefaultAdapter();
+        resultsSet = new LinkedHashSet<>();
+        devicesSet = new LinkedHashSet<>();
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         scanner = adapter.getBluetoothLeScanner();
         scanSettings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                 .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
                 .setNumOfMatches(ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT)
-                .setReportDelay(0L)
+                .setReportDelay(SCANNING_TIME)
                 .build();
+
         scanCallback = new ScanCallback() {
+            //works every time when single ble device getting from scanning
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
-                //super.onScanResult(callbackType, result);
-                BluetoothDevice bluetoothDevice = result.getDevice();
-                Log.d(TAG, "onScanResult: " + bluetoothDevice.toString());
+                if (parseResult(result)) {
+                    showScanResult();
+                }
             }
-
+            //works once - when SCANNING_TIME is over, show all getting ble devices
             @Override
             public void onBatchScanResults(List<ScanResult> results) {
-                //super.onBatchScanResults(results);
-                ArrayList<String> list = new ArrayList<>();
-                Log.d(TAG, "onBatchScanResults: " + results.size() + " " + results.isEmpty());
-                if(!results.isEmpty()){
+                if (!results.isEmpty()) {
                     for (ScanResult result : results) {
-                        list.add(printResult(result));
+                        parseResult(result);
                     }
                 }
-                stopScan();
-                interfaceUpdater.updateInterface(list);
+                showScanResult();
             }
 
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
-                Log.d(TAG, "onScanFailed: ");
             }
         };
     }
 
-    public void scan(){
-        Log.d(TAG, "scan: ");
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void scan() {
+        resultsSet.clear();
         scanner.startScan(filters, scanSettings, scanCallback);
     }
 
-    public void stopScan(){
-        Log.d(TAG, "stopScan: ");
+    public void stopScan() {
         scanner.stopScan(scanCallback);
     }
 
-    String printResult(ScanResult result){
+    public void showScanResult() {
+        interfaceUpdater.updateInterface(new ArrayList<>(resultsSet), new ArrayList<>(devicesSet));
+    }
+
+    boolean parseResult(ScanResult result) {
         BluetoothDevice bluetoothDevice;
         ScanRecord scanRecord;
         bluetoothDevice = result.getDevice();
         scanRecord = result.getScanRecord();
-        String info = bluetoothDevice.getAddress() + " " + scanRecord.getDeviceName();
-        Log.d(TAG, "onBatchScanResults: " + info);
-        return info;
+        /*Log.d(TAG, "parseResult: \n" + bluetoothDevice.toString() + "\n" + scanRecord.toString() + "\n" +
+                bluetoothDevice.getType() + " " + bluetoothDevice.getAlias() + " " +
+                bluetoothDevice.getName() + " " + bluetoothDevice.describeContents() + " " +
+                bluetoothDevice.getBluetoothClass() + " " + bluetoothDevice.getBondState() + " " +
+                Arrays.toString(bluetoothDevice.getUuids()) + "\n" +
+                scanRecord.getDeviceName() + " " + scanRecord.getAdvertiseFlags() + " " +
+                Arrays.toString(scanRecord.getBytes()) + " " + scanRecord.getManufacturerSpecificData() + " " +
+                scanRecord.getServiceData() + " " + scanRecord.getServiceSolicitationUuids() + " " +
+                scanRecord.getServiceUuids() + " " + scanRecord.getTxPowerLevel());*/
+        return devicesSet.add(bluetoothDevice) &
+                resultsSet.add(bluetoothDevice.getAddress() + " " + scanRecord.getDeviceName());
     }
 }

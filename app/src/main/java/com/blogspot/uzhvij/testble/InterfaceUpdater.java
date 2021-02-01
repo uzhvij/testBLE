@@ -1,7 +1,9 @@
 package com.blogspot.uzhvij.testble;
 
-import java.util.ArrayList;
+import android.bluetooth.BluetoothDevice;
+
+import java.util.List;
 
 interface InterfaceUpdater {
-    void updateInterface(ArrayList<String> list);
+    void updateInterface(List<String> list, List<BluetoothDevice> devices);
 }
